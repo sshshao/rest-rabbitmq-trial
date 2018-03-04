@@ -15,15 +15,15 @@ exports.listen = function(req, res) {
             conn.createChannel(function(err, ch) {
                 ch.assertExchange(ex, 'direct', {durable: false});
 
-                req.body.keys.foreach(function(key) {
-                    ch.assertQueue(key, {exclusive: true}, function(err, q) {
+                ch.assertQueue(key, {exclusive: true}, function(err, q) {
+                    req.body.keys.forEach(function(key) {
                         ch.bindQueue(q.queue, ex, key);
+                    });
 
-                        ch.consume(q.queue, function(msg) {
-                            res.send({
-                                'msg': msg
-                            }, {noAck: true});
-                        });
+                    ch.consume(q.queue, function(msg) {
+                        res.send({
+                            'msg': msg
+                        }, {noAck: true});
                     });
                 });
             });
