@@ -44,9 +44,15 @@ exports.speak = function(req, res) {
                 ch.assertExchange(ex, 'direct', {durable: false});
 
                 ch.publish(ex, req.body.key, new Buffer(req.body.msg));
+                console.log(' [x] Sent %s: "%s"', req.body.key, req.body.msg);
             });
 
-            setTimeout(function() { conn.close(); }, 500);
+            setTimeout(function() {
+                conn.close();
+                res.send({
+                    'status': 'ERROR'
+                });
+            }, 500);
         });
     }
     else {
