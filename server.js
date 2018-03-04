@@ -25,8 +25,8 @@ app.use(function(req, res, next) {
 
 http.createServer(app).listen(8080);
 
-router.post('/listen', exchange.register);
-router.post('/speak', exchange.verify);
+router.post('/listen', exchange.listen);
+router.post('/speak', exchange.speak);
 
 
 app.use('/', router);

@@ -45,6 +45,8 @@ exports.speak = function(req, res) {
 
                 ch.publish(ex, req.body.key, new Buffer(req.body.msg));
             });
+
+            setTimeout(function() { conn.close(); }, 500);
         });
     }
     else {
