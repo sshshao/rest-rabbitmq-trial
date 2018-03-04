@@ -15,7 +15,7 @@ exports.listen = function(req, res) {
             conn.createChannel(function(err, ch) {
                 ch.assertExchange(ex, 'direct', {durable: false});
 
-                ch.assertQueue(key, {exclusive: true}, function(err, q) {
+                ch.assertQueue('', {exclusive: true}, function(err, q) {
                     req.body.keys.forEach(function(key) {
                         ch.bindQueue(q.queue, ex, key);
                     });
@@ -40,7 +40,7 @@ exports.speak = function(req, res) {
     /* Publishes the message to exchange hw3 with provided key */
     if(req.body.key != null && req.body.msg != null) {
         amqp.connect(url, function(err, conn) {
-            conn.createChannel(function(ch) {
+            conn.createChannel(function(err, ch) {
                 ch.assertExchange(ex, 'direct', {durable: false});
 
                 ch.publish(ex, req.body.key, new Buffer(req.body.msg));
