@@ -1,0 +1,22 @@
+{
+  "name": "rabbitmq-routing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sshshao/rest-rabbitmq-trial.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sshshao/rest-rabbitmq-trial/issues"
+  },
+  "homepage": "https://github.com/sshshao/rest-rabbitmq-trial#readme",
+  "dependencies": {
+    "amqplib": "^0.5.2"
+  }
+}
