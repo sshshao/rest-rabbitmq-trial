@@ -67,11 +67,12 @@ exports.speak = function(req, res) {
                             }, 500);
                         }
                     }, {noAck: true});
+
+                    ch.publish(ex, req.body.key, new Buffer(req.body.msg), 
+                        {correlationId: corr, replyTo: q.queue});
                 });
 
                 //ch.publish(ex, req.body.key, new Buffer(req.body.msg));
-                ch.publish(ex, req.body.key, new Buffer(req.body.msg), 
-                    {correlationId: corr, replyTo: q.queue});
             });
         });
     }
