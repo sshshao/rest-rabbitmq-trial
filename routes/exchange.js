@@ -20,6 +20,7 @@ exports.listen = function(req, res) {
 
                     req.body.keys.forEach(function(key) {
                         ch.bindQueue(q.queue, ex, key);
+                        console.log(' [x] Binded queue with key %s', key);
                     });
 
                     ch.consume(q.queue, function(msg) {
@@ -28,7 +29,7 @@ exports.listen = function(req, res) {
                         ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
                             {correlationId: msg.properties.correlationId});
                         ch.ack(msg);
-                    });
+                    }, {noAck: false});
 
                     res.send({'status': 'OK'});
                 });
@@ -61,9 +62,6 @@ exports.speak = function(req, res) {
                             res.send({
                                 'msg': msg.content.toString()
                             });
-                            setTimeout(function() {
-                                conn.close();
-                            }, 500);
                         }
                     }, {noAck: false});
 
@@ -73,6 +71,10 @@ exports.speak = function(req, res) {
 
                 //ch.publish(ex, req.body.key, new Buffer(req.body.msg));
             });
+            setTimeout(function() {
+                conn.close();
+                res.send({'msg': ''});
+            }, 500);
         });
     }
     else {
