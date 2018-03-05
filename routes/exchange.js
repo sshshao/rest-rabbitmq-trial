@@ -3,6 +3,7 @@ var amqp = require('amqplib/callback_api');
 
 const url = 'amqp://localhost';
 const ex = 'hw3';
+const ae = 'ae';
 
 exports.listen = function(req, res) {
     /* 
@@ -13,10 +14,10 @@ exports.listen = function(req, res) {
     if(req.body.keys != null) {
         amqp.connect(url, function(err, conn) {
             conn.createChannel(function(err, ch) {
+                //Direct exchange with key
                 ch.assertExchange(ex, 'direct', {durable: false});
-
                 ch.assertQueue('', {exclusive: true}, function(err, q) {
-                    console.log(' [x] Awaiting requests');
+                    console.log(' [x] Awaiting requests DE');
 
                     req.body.keys.forEach(function(key) {
                         ch.bindQueue(q.queue, ex, key);
@@ -29,10 +30,23 @@ exports.listen = function(req, res) {
                         ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
                             {correlationId: msg.properties.correlationId});
                         ch.ack(msg);
-                    }, {noAck: false});
-
-                    res.send({'status': 'OK'});
+                    });
                 });
+
+                //Alternate exchange to deal with unroutable 
+                ch.assertExchange(ae, 'fanout', {durable: false});
+                ch.assertQueue('', {exclusive: true}, function(err, q) {
+                    console.log(' [x] Awaiting requests AE');
+
+                    ch.consume(q.queue, function(msg) {
+                        console.log(' [x] Endpoint <listen> returning unrouted msg..."');
+                        ch.sendToQueue(msg.properties.replyTo, new Buffer(''),
+                            {correlationId: msg.properties.correlationId});
+                        ch.ack(msg);
+                    });
+                });
+
+                res.send({'status': 'OK'});
             });
         });
     }
@@ -58,10 +72,13 @@ exports.speak = function(req, res) {
                     ch.consume(q.queue, function(msg) {
                         if(msg.properties.correlationId == corr) {
                             console.log(' [.] Got %s',
-                            msg.content.toString());
+                                msg.content.toString());
                             res.send({
                                 'msg': msg.content.toString()
                             });
+                        }
+                        else {
+                            res.send({'msg': ''});
                         }
                     }, {noAck: false});
 
