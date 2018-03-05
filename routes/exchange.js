@@ -31,9 +31,12 @@ exports.listen = function(req, res) {
                             {correlationId: msg.properties.correlationId});
                         ch.ack(msg);
                     });
+                    
+                    res.send({'status': 'OK'});
                 });
 
-                //Alternate exchange to deal with unroutable 
+                /*
+                //Alternate exchange to deal with unroutable messages 
                 ch.assertExchange(ae, 'fanout', {durable: false});
                 ch.assertQueue('', {exclusive: true}, function(err, q) {
                     console.log(' [x] Awaiting requests AE');
@@ -45,8 +48,7 @@ exports.listen = function(req, res) {
                         ch.ack(msg);
                     });
                 });
-
-                res.send({'status': 'OK'});
+                */
             });
         });
     }
@@ -63,6 +65,7 @@ exports.speak = function(req, res) {
         amqp.connect(url, function(err, conn) {
             conn.createChannel(function(err, ch) {
                 ch.assertExchange(ex, 'direct', {durable: false});
+                //ch.assertExchange(ae, 'fanout', {durable: false});
 
                 ch.assertQueue('', {exclusive: true}, function(err, q) {
                     var corr = generateUuid();
@@ -82,16 +85,12 @@ exports.speak = function(req, res) {
                         }
                     }, {noAck: false});
 
-                    ch.publish(ex, req.body.key, new Buffer(req.body.msg), 
-                        {correlationId: corr, replyTo: q.queue});
+                    ch.publish(ex, req.body.key, new Buffer(req.body.msg),
+                        {correlationId: corr, replyTo: q.queue, mandatory: true});
                 });
 
                 //ch.publish(ex, req.body.key, new Buffer(req.body.msg));
             });
-            setTimeout(function() {
-                conn.close();
-                res.send({'msg': ''});
-            }, 500);
         });
     }
     else {
