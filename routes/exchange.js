@@ -10,6 +10,7 @@ exports.listen = function(req, res) {
         Creates an exclusive queue, binds to “hw3” with all provided keys, 
         waits to receive a message and returns it as { msg: } 
     */
+    console.log(JSON.stringify(req.body));
 
     if(req.body.keys != null) {
         amqp.connect(url, function(err, conn) {
@@ -27,12 +28,16 @@ exports.listen = function(req, res) {
                     ch.consume(q.queue, function(msg) {
                         console.log(' [x] Endpoint <listen> consuming %s: "%s"', 
                             msg.fields.routingKey, msg.content.toString());
-                        ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
+                        var response = new Buffer(msg.content.toString());
+                        ch.sendToQueue(msg.properties.replyTo, response,
                             {correlationId: msg.properties.correlationId});
+                        res.send({
+                            'msg': msg.content.toString()
+                        });
+                        
                         ch.ack(msg);
+                        ch.close();
                     });
-
-                    res.send({'status': 'OK'});
                 });
 
                 /*
@@ -51,6 +56,7 @@ exports.listen = function(req, res) {
                 */
             });
         });
+        //res.send({'status': 'OK'});
     }
     else {
         res.send({
