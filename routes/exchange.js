@@ -3,7 +3,7 @@ var amqp = require('amqplib/callback_api');
 
 const url = 'amqp://localhost';
 const ex = 'hw3';
-const ae = 'ae';
+//const ae = 'ae';
 
 exports.listen = function(req, res) {
     /* 
@@ -92,17 +92,22 @@ exports.speak = function(req, res) {
                 });
                 */
                 ch.on('return', function() {
+                    console.log(' [x] Received unrouted key', req.body.key);
                     res.send({'msg': ''});
+                    ch.close();
                 });
+
                 ch.publish(ex, req.body.key, new Buffer(req.body.msg), {mandatory: true}, function() {
+                    console.log(' [x] Received key %s: %s', req.body.key, req.body.msg);
                     res.send({'msg': req.body.msg});
+                    //ch.close();
                 });
             });
         });
     }
     else {
         res.send({
-            'status': 'ERROR'
+            'msg': 'ERROR'
         });
     }
 }
