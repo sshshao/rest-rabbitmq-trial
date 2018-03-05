@@ -27,8 +27,8 @@ exports.listen = function(req, res) {
                     ch.consume(q.queue, function(msg) {
                         console.log(' [x] Endpoint <listen> consuming %s: "%s"', 
                             msg.fields.routingKey, msg.content.toString());
-                        //ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
-                        //    {correlationId: msg.properties.correlationId});
+                        ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
+                            {correlationId: msg.properties.correlationId});
                         ch.ack(msg);
                     });
 
@@ -67,11 +67,16 @@ exports.speak = function(req, res) {
                 ch.assertExchange(ex, 'direct', {durable: false});
                 //ch.assertExchange(ae, 'fanout', {durable: false});
 
-                /*
                 ch.assertQueue('', {exclusive: true}, function(err, q) {
                     var corr = generateUuid();
                     console.log(' [x] Endpoint <speak> requesting %s: "%s"', 
                         req.body.key, req.body.msg);
+
+                    ch.on('return', function() {
+                        console.log(' [x] Received unrouted key', req.body.key);
+                        res.send({'msg': ''});
+                        ch.close();
+                    });
 
                     ch.consume(q.queue, function(msg) {
                         if(msg.properties.correlationId == corr) {
@@ -80,28 +85,21 @@ exports.speak = function(req, res) {
                             res.send({
                                 'msg': msg.content.toString()
                             });
+                            ch.close();
                         }
                     }, {noAck: true});
-
-                    ch.on('return', function() {
-                        res.send({'msg': ''});
-                    });
                     
                     ch.publish(ex, req.body.key, new Buffer(req.body.msg),
                         {correlationId: corr, replyTo: q.queue, mandatory: true});
                 });
-                */
-                ch.on('return', function() {
-                    console.log(' [x] Received unrouted key', req.body.key);
-                    res.send({'msg': ''});
-                    ch.close();
-                });
 
+                /*
                 ch.publish(ex, req.body.key, new Buffer(req.body.msg), {mandatory: true}, function() {
                     console.log(' [x] Received key %s: %s', req.body.key, req.body.msg);
                     res.send({'msg': req.body.msg});
                     //ch.close();
                 });
+                */
             });
         });
     }
