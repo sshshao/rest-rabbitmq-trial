@@ -23,8 +23,14 @@ exports.listen = function(req, res) {
                     });
 
                     ch.consume(q.queue, function(msg) {
-                        console.log(" [x] %s: '%s'", msg.fields.routingKey, msg.content.toString());
+                        console.log(' [x] Endpoint <listen> consuming %s: "%s"', 
+                            msg.fields.routingKey, msg.content.toString());
+                        ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
+                            {correlationId: msg.properties.correlationId});
+                        ch.ack(msg);
                     });
+
+                    res.send({'status': 'OK'});
                 });
             });
         });
@@ -43,16 +49,29 @@ exports.speak = function(req, res) {
             conn.createChannel(function(err, ch) {
                 ch.assertExchange(ex, 'direct', {durable: false});
 
-                ch.publish(ex, req.body.key, new Buffer(req.body.msg));
-                console.log(' [x] Sent %s: "%s"', req.body.key, req.body.msg);
-            });
+                ch.assertQueue(ex, {exclusive: true}, function(err, q) {
+                    var corr = generateUuid();
+                    console.log(' [x] Endpoint <speak> requesting %s: "%s"', 
+                        req.body.key, req.body.msg);
 
-            setTimeout(function() {
-                conn.close();
-                res.send({
-                    'status': 'ERROR'
+                    ch.consume(q.queue, function(msg) {
+                        if(msg.properties.correlationId == corr) {
+                            console.log(' [.] Got %s', msg.content.toString());
+                            res.send({
+                                'msg': msg.content.toString()
+                            });
+                            setTimeout(function() {
+                                conn.close();
+                                process.exit(0)
+                            }, 500);
+                        }
+                    }, {noAck: true});
                 });
-            }, 500);
+
+                //ch.publish(ex, req.body.key, new Buffer(req.body.msg));
+                ch.publish(ex, req.body.key, new Buffer(req.body.msg), 
+                    {correlationId: corr, replyTo: q.queue});
+            });
         });
     }
     else {
@@ -61,3 +80,9 @@ exports.speak = function(req, res) {
         });
     }
 }
+
+function generateUuid() {
+    return Math.random().toString() +
+           Math.random().toString() +
+           Math.random().toString();
+  }
