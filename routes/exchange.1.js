@@ -16,16 +16,20 @@ exports.listen = function(req, res) {
                 ch.assertExchange(ex, 'direct', {durable: false});
 
                 ch.assertQueue(ex, {exclusive: true}, function(err, q) {
-                    console.log(' [x] Awaiting requests');
-
                     req.body.keys.forEach(function(key) {
                         ch.bindQueue(q.queue, ex, key);
                     });
 
-                    ch.consume(q.queue, function(msg) {
-                        console.log(" [x] %s: '%s'", msg.fields.routingKey, msg.content.toString());
+                    ch.consume(q.queue, function reply(msg) {
+                        ch.sendToQueue(msg.properties.replyTo, 
+                            new Buffer(msg.body.msg),
+                            {correlationId: msg.properties.correlationId});
+                        ch.ack(msg);
                     });
                 });
+                ch.prefetch(1);
+                console.log(' [x] Awaiting RPC requests');
+
             });
         });
     }
