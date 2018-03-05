@@ -62,7 +62,8 @@ exports.speak = function(req, res) {
                             });
                             setTimeout(function() {
                                 conn.close();
-                                process.exit(0)
+                                res.send({'status': 'ERROR'});
+                                process.exit(0);
                             }, 500);
                         }
                     }, {noAck: true});
