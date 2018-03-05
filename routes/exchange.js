@@ -31,7 +31,7 @@ exports.listen = function(req, res) {
                             {correlationId: msg.properties.correlationId});
                         ch.ack(msg);
                     });
-                    
+
                     res.send({'status': 'OK'});
                 });
 
@@ -63,7 +63,7 @@ exports.speak = function(req, res) {
     /* Publishes the message to exchange hw3 with provided key */
     if(req.body.key != null && req.body.msg != null) {
         amqp.connect(url, function(err, conn) {
-            conn.createChannel(function(err, ch) {
+            conn.createConfirmChannel(function(err, ch) {
                 ch.assertExchange(ex, 'direct', {durable: false});
                 //ch.assertExchange(ae, 'fanout', {durable: false});
 
@@ -85,6 +85,10 @@ exports.speak = function(req, res) {
                         }
                     }, {noAck: false});
 
+                    ch.on('return', function() {
+                        res.send({'msg': ''});
+                    });
+                    
                     ch.publish(ex, req.body.key, new Buffer(req.body.msg),
                         {correlationId: corr, replyTo: q.queue, mandatory: true});
                 });
