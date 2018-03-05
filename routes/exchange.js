@@ -27,8 +27,8 @@ exports.listen = function(req, res) {
                     ch.consume(q.queue, function(msg) {
                         console.log(' [x] Endpoint <listen> consuming %s: "%s"', 
                             msg.fields.routingKey, msg.content.toString());
-                        ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
-                            {correlationId: msg.properties.correlationId});
+                        //ch.sendToQueue(msg.properties.replyTo, new Buffer(msg.content.toString()),
+                        //    {correlationId: msg.properties.correlationId});
                         ch.ack(msg);
                     });
 
@@ -67,6 +67,7 @@ exports.speak = function(req, res) {
                 ch.assertExchange(ex, 'direct', {durable: false});
                 //ch.assertExchange(ae, 'fanout', {durable: false});
 
+                /*
                 ch.assertQueue('', {exclusive: true}, function(err, q) {
                     var corr = generateUuid();
                     console.log(' [x] Endpoint <speak> requesting %s: "%s"', 
@@ -80,10 +81,7 @@ exports.speak = function(req, res) {
                                 'msg': msg.content.toString()
                             });
                         }
-                        else {
-                            res.send({'msg': ''});
-                        }
-                    }, {noAck: false});
+                    }, {noAck: true});
 
                     ch.on('return', function() {
                         res.send({'msg': ''});
@@ -92,8 +90,13 @@ exports.speak = function(req, res) {
                     ch.publish(ex, req.body.key, new Buffer(req.body.msg),
                         {correlationId: corr, replyTo: q.queue, mandatory: true});
                 });
-
-                //ch.publish(ex, req.body.key, new Buffer(req.body.msg));
+                */
+                ch.on('return', function() {
+                    res.send({'msg': ''});
+                });
+                ch.publish(ex, req.body.key, new Buffer(req.body.msg), {mandatory: true}, function() {
+                    res.send({'msg': req.body.msg});
+                });
             });
         });
     }
